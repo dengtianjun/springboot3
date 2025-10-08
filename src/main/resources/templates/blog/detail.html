@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${blogPost.title}">博客文章</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .post-title {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .post-meta {
+            color: #666;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .post-content {
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="/blog" class="back-link">&larr; 返回博客列表</a>
+    
+    <h1 class="post-title" th:text="${blogPost.title}">文章标题</h1>
+    
+    <div class="post-meta">
+        作者: <span th:text="${blogPost.author}">作者</span> | 
+        发布时间: <span th:text="${#temporals.format(blogPost.publishDate, 'yyyy-MM-dd HH:mm')}">时间</span>
+    </div>
+    
+    <div class="post-content" th:text="${blogPost.content}">文章内容</div>
+</body>
+</html>

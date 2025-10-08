@@ -1,2 +1,9 @@
 /Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/DemoApplication.java
+/Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/controller/BlogHandler.java
+/Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/controller/BlogRouter.java
 /Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/controller/HelloController.java
+/Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/controller/WebFluxController.java
+/Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/controller/WebFluxHandler.java
+/Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/controller/WebFluxRouter.java
+/Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/model/BlogPost.java
+/Users/tan/source/0927test/springboot3/src/main/java/com/example/demo/service/BlogService.java
