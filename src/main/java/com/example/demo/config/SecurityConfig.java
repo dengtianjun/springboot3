@@ -2,39 +2,41 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-
-import static org.springframework.security.config.Customizer.withDefaults;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
-@EnableWebFluxSecurity
-@EnableReactiveMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-        return http
-                .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/", "/home", "/contact").permitAll()
-                        .pathMatchers("/api/messages/**").authenticated()
-                        .anyExchange().authenticated()
-                )
-                .httpBasic(withDefaults())
-                .formLogin(withDefaults())
-                .csrf(csrf -> csrf.disable())
-                .build();
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/", "/home", "/contact", "/login").permitAll()
+                .requestMatchers("/api/messages/**").authenticated()
+                .requestMatchers("/chat/**").authenticated()
+                .anyRequest().authenticated()
+            )
+            .httpBasic(withDefaults())
+            .formLogin(form -> form
+                .loginPage("/login")
+                .permitAll()
+                .defaultSuccessUrl("/chat", true)
+            )
+            .csrf(csrf -> csrf.disable());
+        return http.build();
     }
 
     @Bean
-    public MapReactiveUserDetailsService userDetailsService() {
+    public UserDetailsService userDetailsService() {
         PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
         
         UserDetails user = User.builder()
@@ -49,6 +51,6 @@ public class SecurityConfig {
                 .roles("ADMIN", "USER")
                 .build();
 
-        return new MapReactiveUserDetailsService(user, admin);
+        return new InMemoryUserDetailsManager(user, admin);
     }
 }

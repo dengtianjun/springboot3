@@ -1,7 +1,6 @@
 package com.example.demo.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.ViewResolverRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.thymeleaf.spring6.ISpringWebFluxTemplateEngine;
@@ -12,7 +11,6 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.springframework.context.annotation.Bean;
 
 @Configuration
-@EnableWebFlux
 public class WebConfig implements WebFluxConfigurer {
     
     @Bean

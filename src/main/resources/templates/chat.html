@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .chat-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .message {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
+        .system-message {
+            color: #666;
+            font-style: italic;
+        }
+        .direct-message {
+            background-color: #e6f3ff;
+        }
+        .broadcast-message {
+            background-color: #fff2e6;
+        }
+        .secured-message {
+            background-color: #ffe6e6;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Chat Demo</h1>
+    
+    <div class="chat-container">
+        <h2>Connection Status</h2>
+        <div id="connection-status">Disconnected</div>
+        <button id="connect">Connect</button>
+        <button id="disconnect" disabled>Disconnect</button>
+    </div>
+    
+    <div class="chat-container">
+        <h2>Direct Message</h2>
+        <div class="input-group">
+            <input type="text" id="recipient" placeholder="Recipient username">
+            <input type="text" id="direct-message" placeholder="Enter your message">
+            <button id="send-direct">Send Direct Message</button>
+        </div>
+    </div>
+    
+    <div class="chat-container">
+        <h2>Broadcast Message</h2>
+        <div class="input-group">
+            <input type="text" id="broadcast-message" placeholder="Enter your message">
+            <button id="send-broadcast">Broadcast Message</button>
+        </div>
+    </div>
+    
+    <div class="chat-container" id="admin-section" style="display:none;">
+        <h2>Secured Message (Admin Only)</h2>
+        <div class="input-group">
+            <input type="text" id="secured-message" placeholder="Enter secured message">
+            <button id="send-secured">Send Secured Message</button>
+        </div>
+    </div>
+    
+    <div class="chat-container">
+        <h2>Messages</h2>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        var stompClient = null;
+        var username = null;
+        
+        function connect() {
+            var socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function (frame) {
+                username = frame.headers['user-name'] || 'user';
+                setConnected(true);
+                console.log('Connected: ' + frame);
+                showAdminSection();
+                
+                // 订阅用户私信
+                stompClient.subscribe('/user/queue/messages', function (message) {
+                    showMessage(JSON.parse(message.body), 'direct');
+                });
+                
+                // 订阅广播消息
+                stompClient.subscribe('/topic/messages', function (message) {
+                    showMessage(JSON.parse(message.body), 'broadcast');
+                });
+                
+                // 订阅安全消息（仅管理员可见）
+                stompClient.subscribe('/topic/security', function (message) {
+                    showMessage(JSON.parse(message.body), 'secured');
+                });
+                
+                showMessage({message: "Connected to WebSocket"}, 'system');
+            });
+        }
+        
+        function showAdminSection() {
+            // 简化处理，实际应用中应该通过API检查用户角色
+            if (username === 'admin') {
+                document.getElementById('admin-section').style.display = 'block';
+            }
+        }
+        
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            setConnected(false);
+            console.log("Disconnected");
+        }
+        
+        function setConnected(connected) {
+            document.getElementById('connect').disabled = connected;
+            document.getElementById('disconnect').disabled = !connected;
+            document.getElementById('connection-status').innerHTML = connected ? 'Connected' : 'Disconnected';
+        }
+        
+        function showMessage(message, type) {
+            var messagesDiv = document.getElementById('messages');
+            var messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type + '-message';
+            
+            var content = '';
+            if (type === 'system') {
+                messageDiv.className += ' system-message';
+                content = '<strong>System:</strong> ' + message.message;
+            } else {
+                content = '<strong>' + (message.sender || 'System') + ':</strong> ' + message.message + 
+                         ' <em>(' + type + ')</em>';
+            }
+            
+            messageDiv.innerHTML = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function sendDirectMessage() {
+            if (stompClient) {
+                var recipient = document.getElementById('recipient').value;
+                var message = document.getElementById('direct-message').value;
+                
+                stompClient.send("/app/chat.message", {}, JSON.stringify({
+                    'recipient': recipient,
+                    'message': message
+                }));
+                
+                document.getElementById('direct-message').value = '';
+            }
+        }
+        
+        function sendBroadcastMessage() {
+            if (stompClient) {
+                var message = document.getElementById('broadcast-message').value;
+                
+                stompClient.send("/app/chat.broadcast", {}, JSON.stringify({
+                    'message': message
+                }));
+                
+                document.getElementById('broadcast-message').value = '';
+            }
+        }
+        
+        function sendSecuredMessage() {
+            if (stompClient) {
+                var message = document.getElementById('secured-message').value;
+                
+                stompClient.send("/app/secured.message", {}, JSON.stringify({
+                    'message': message
+                }));
+                
+                document.getElementById('secured-message').value = '';
+            }
+        }
+        
+        window.onload = function() {
+            document.getElementById('connect').addEventListener('click', connect);
+            document.getElementById('disconnect').addEventListener('click', disconnect);
+            document.getElementById('send-direct').addEventListener('click', sendDirectMessage);
+            document.getElementById('send-broadcast').addEventListener('click', sendBroadcastMessage);
+            document.getElementById('send-secured').addEventListener('click', sendSecuredMessage);
+        };
+    </script>
+</body>
+</html>
